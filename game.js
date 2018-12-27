@@ -15,6 +15,7 @@ game = {
     game.score = 0;
     game.fps = 8;
     snake.init();
+    gameBoard.init();
     food.set();
   },
   
@@ -94,7 +95,9 @@ snake = {
     }
     snake.checkCollision();
     snake.checkGrowth();
-    snake.sections.push(snake.x + ',' + snake.y);
+    const coordinate = snake.x + ',' + snake.y;
+    snake.sections.push(coordinate);
+    gameBoard.vacant = gameBoard.vacant.filter(v => v !== coordinate);
   },
   
   draw: function() {
@@ -131,11 +134,27 @@ snake = {
       }
       food.set();
     } else {
-      snake.sections.shift();
+      const vacantCoordinate = snake.sections.shift();
+	  gameBoard.vacant.push(vacantCoordinate);
     }
   }
-  
 };
+
+gameBoard = {
+  vacant: [],
+
+  init: function() {
+    const allCoordinates = [];
+    for (x = 4; x < canvas.width; x += snake.size) {
+      for (y = 4; y < canvas.height; y+= snake.size) {
+      allCoordinates.push(x + ',' + y);
+      }
+    }
+    const allSnake = [...snake.sections];
+    allSnake.push(snake.x + ',' + snake.y);
+    gameBoard.vacant = allCoordinates.filter(c => allSnake.find(s => c === s) == null);
+  }
+}
 
 food = {
   
@@ -146,8 +165,10 @@ food = {
   
   set: function() {
     food.size = snake.size;
-    food.x = (Math.ceil(Math.random() * 10) * snake.size * 4) - snake.size / 2;
-    food.y = (Math.ceil(Math.random() * 10) * snake.size * 3) - snake.size / 2;
+    const foodIndex = Math.floor(Math.random() * gameBoard.vacant.length);
+    const foodLocation = gameBoard.vacant[foodIndex].split(',');
+    food.x = parseInt(foodLocation[0]);
+    food.y = parseInt(foodLocation[1]);
   },
   
   draw: function() {
@@ -202,6 +223,13 @@ function loop() {
     food.draw();
     snake.draw();
     game.drawMessage();
+    document.getElementById("snakeLength").innerHTML = snake.sections.length;
+    document.getElementById("snakeLocation").innerHTML = `${snake.x} ${snake.y}`;
+    document.getElementById("foodLocation").innerHTML = `${food.x} ${food.y}`;
+    document.getElementById("gameScore").innerHTML = `${game.score}`;
+    document.getElementById("status").innerHTML = "1";
+  } else {
+      document.getElementById("status").innerHTML = "0";
   }
   setTimeout(function() {
     requestAnimationFrame(loop);
